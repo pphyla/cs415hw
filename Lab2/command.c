@@ -132,6 +132,7 @@ void listDir()
     for (int i = 0; i < file_count; i++)
     {
         write(STDOUT_FILENO, files[i], strlen(files[i]));
+        write(STDOUT_FILENO, " ", 1);
     }
     write(STDOUT_FILENO, "\n", strlen("\n"));
 

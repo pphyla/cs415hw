@@ -73,9 +73,10 @@ void listDir(void)
     qsort(names, count, sizeof(*names), compare_names);
     for (index = 0; index < count; index++) {
         write_text(names[index]);
-        write_text(index + 1 == count ? "\n" : " ");
+        write_text(" ");
         free(names[index]);
     }
+    write_text("\n");
     free(names);
 }
 

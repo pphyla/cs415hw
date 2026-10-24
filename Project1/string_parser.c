@@ -1,59 +1,96 @@
-#include "string_parser.h"
-
 #include <stdlib.h>
 #include <string.h>
 
-command_line *parse_command_line(char *text)
+#include "string_parser.h"
+
+int count_token(char *buf, const char *delim)
 {
+    int count = 0;
     char *token;
-    char *save_pointer;
-    command_line *parsed;
 
-    parsed = malloc(sizeof(*parsed));
-    if (parsed == NULL) {
-        return NULL;
+    if (buf == NULL || delim == NULL) {
+        return 0;
     }
 
-    parsed->command = NULL;
-    parsed->arguments = NULL;
-    parsed->argument_count = 0;
-
-    token = strtok_r(text, " \t\r\n", &save_pointer);
-    if (token == NULL) {
-        return parsed;
+    token = strtok(buf, delim);
+    while (token != NULL) {
+        count++;
+        token = strtok(NULL, delim);
     }
-
-    parsed->command = malloc(strlen(token) + 1);
-    if (parsed->command == NULL) {
-        free(parsed);
-        return NULL;
-    }
-    strcpy(parsed->command, token);
-
-    while ((token = strtok_r(NULL, " \t\r\n", &save_pointer)) != NULL) {
-        char **new_arguments;
-
-        new_arguments = realloc(parsed->arguments,
-                                sizeof(*parsed->arguments) *
-                                (size_t)(parsed->argument_count + 1));
-        if (new_arguments == NULL) {
-            free_command_line(parsed);
-            return NULL;
-        }
-        parsed->arguments = new_arguments;
-        parsed->arguments[parsed->argument_count] = token;
-        parsed->argument_count++;
-    }
-
-    return parsed;
+    return count;
 }
 
-void free_command_line(command_line *parsed)
+command_line str_filler(char *buf, const char *delim)
 {
-    if (parsed == NULL) {
+    command_line command = {NULL, 0};
+    char *temporary;
+    char *token;
+    char *save_pointer;
+    int index = 0;
+
+    if (buf == NULL || delim == NULL) {
+        return command;
+    }
+
+    if (strlen(buf) > 0 && buf[strlen(buf) - 1] == '\n') {
+        buf[strlen(buf) - 1] = '\0';
+    }
+
+    temporary = malloc(strlen(buf) + 1);
+    if (temporary == NULL) {
+        return command;
+    }
+    strcpy(temporary, buf);
+
+    token = strtok_r(temporary, delim, &save_pointer);
+    while (token != NULL) {
+        command.num_token++;
+        token = strtok_r(NULL, delim, &save_pointer);
+    }
+    free(temporary);
+
+    if (command.num_token == 0) {
+        return command;
+    }
+
+    command.command_list = malloc((size_t)(command.num_token + 1) *
+                                  sizeof(*command.command_list));
+    if (command.command_list == NULL) {
+        command.num_token = 0;
+        return command;
+    }
+
+    token = strtok_r(buf, delim, &save_pointer);
+    while (token != NULL) {
+        command.command_list[index] = malloc(strlen(token) + 1);
+        if (command.command_list[index] == NULL) {
+            for (int cleanup_index = 0; cleanup_index < index;
+                 cleanup_index++) {
+                free(command.command_list[cleanup_index]);
+            }
+            free(command.command_list);
+            command.command_list = NULL;
+            command.num_token = 0;
+            return command;
+        }
+        strcpy(command.command_list[index], token);
+        index++;
+        token = strtok_r(NULL, delim, &save_pointer);
+    }
+    command.command_list[index] = NULL;
+    return command;
+}
+
+void free_command_line(command_line *command)
+{
+    if (command == NULL || command->command_list == NULL) {
         return;
     }
-    free(parsed->command);
-    free(parsed->arguments);
-    free(parsed);
+
+    for (int index = 0; index < command->num_token; index++) {
+        free(command->command_list[index]);
+    }
+    free(command->command_list);
+    command->command_list = NULL;
+    command->num_token = 0;
 }

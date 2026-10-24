@@ -41,41 +41,41 @@ static int run_command(command_line *parsed)
 {
     int required;
 
-    if (parsed->command == NULL) {
+    if (parsed->num_token == 0) {
         return 1;
     }
-    required = expected_arguments(parsed->command);
+    required = expected_arguments(parsed->command_list[0]);
     if (required == -1) {
         output_text("Error! Unrecognized command: ");
-        output_text(parsed->command);
+        output_text(parsed->command_list[0]);
         output_text("\n");
         return -1;
     }
-    if (parsed->argument_count != required) {
+    if (parsed->num_token - 1 != required) {
         output_text("Error! Unsupported parameters for command: ");
-        output_text(parsed->command);
+        output_text(parsed->command_list[0]);
         output_text("\n");
         return -1;
     }
 
-    if (strcmp(parsed->command, "ls") == 0) {
+    if (strcmp(parsed->command_list[0], "ls") == 0) {
         listDir();
-    } else if (strcmp(parsed->command, "pwd") == 0) {
+    } else if (strcmp(parsed->command_list[0], "pwd") == 0) {
         showCurrentDir();
-    } else if (strcmp(parsed->command, "mkdir") == 0) {
-        makeDir(parsed->arguments[0]);
-    } else if (strcmp(parsed->command, "cd") == 0) {
-        changeDir(parsed->arguments[0]);
-    } else if (strcmp(parsed->command, "cp") == 0) {
-        copyFile(parsed->arguments[0], parsed->arguments[1]);
-    } else if (strcmp(parsed->command, "mv") == 0) {
-        moveFile(parsed->arguments[0], parsed->arguments[1]);
-    } else if (strcmp(parsed->command, "rm") == 0) {
-        deleteFile(parsed->arguments[0]);
-    } else if (strcmp(parsed->command, "cat") == 0) {
-        displayFile(parsed->arguments[0]);
+    } else if (strcmp(parsed->command_list[0], "mkdir") == 0) {
+        makeDir(parsed->command_list[1]);
+    } else if (strcmp(parsed->command_list[0], "cd") == 0) {
+        changeDir(parsed->command_list[1]);
+    } else if (strcmp(parsed->command_list[0], "cp") == 0) {
+        copyFile(parsed->command_list[1], parsed->command_list[2]);
+    } else if (strcmp(parsed->command_list[0], "mv") == 0) {
+        moveFile(parsed->command_list[1], parsed->command_list[2]);
+    } else if (strcmp(parsed->command_list[0], "rm") == 0) {
+        deleteFile(parsed->command_list[1]);
+    } else if (strcmp(parsed->command_list[0], "cat") == 0) {
+        displayFile(parsed->command_list[1]);
     }
-    return strcmp(parsed->command, "exit") == 0 ? 0 : 1;
+    return strcmp(parsed->command_list[0], "exit") == 0 ? 0 : 1;
 }
 
 static int process_line(char *line)
@@ -86,21 +86,18 @@ static int process_line(char *line)
 
     segment = strtok_r(line, ";", &save_pointer);
     while (segment != NULL) {
-        command_line *parsed = parse_command_line(segment);
-        if (parsed == NULL) {
-            return 1;
-        }
-        if (parsed->command != NULL) {
-            int result = run_command(parsed);
+        command_line parsed = str_filler(segment, " \t\r\n");
+        if (parsed.num_token != 0) {
+            int result = run_command(&parsed);
             if (result == 0) {
                 exit_shell = 1;
             }
-            free_command_line(parsed);
+            free_command_line(&parsed);
             if (result <= 0) {
                 break;
             }
         } else {
-            free_command_line(parsed);
+            free_command_line(&parsed);
         }
         segment = strtok_r(NULL, ";", &save_pointer);
     }

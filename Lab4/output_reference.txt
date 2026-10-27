@@ -1,0 +1,14 @@
+Input:
+./lab4 3
+
+Expected output pattern:
+Process: <pid1> - Begining to write to file.
+Process: <pid2> - Begining to write to file.
+Process: <pid3> - Begining to write to file.
+Process: <pid1> - Finished.
+Process: <pid2> - Finished.
+Process: <pid3> - Finished.
+
+The process IDs and the order of the Finished messages may vary between runs.
+All three child processes should begin before the parent exits, and the parent
+should wait until all three children finish.
